@@ -4,6 +4,21 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Приглашение на свидание</title>
+  <meta name="description" content="Милое приглашение на первое свидание 10.06.2026 в 20:00.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://darkhankz.github.io/invitation/">
+  <meta property="og:title" content="Приглашение на свидание">
+  <meta property="og:description" content="Котик, цветы и маленький маршрут вечера. Нажать «Нет» технически невозможно.">
+  <meta property="og:image" content="https://darkhankz.github.io/invitation/assets/date-preview.png">
+  <meta property="og:image:secure_url" content="https://darkhankz.github.io/invitation/assets/date-preview.png">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Милый котик с цветами на фоне вечернего парка и колеса обозрения">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Приглашение на свидание">
+  <meta name="twitter:description" content="Котик, цветы и маленький маршрут вечера.">
+  <meta name="twitter:image" content="https://darkhankz.github.io/invitation/assets/date-preview.png">
   <style>
     :root {
       --ink: #263238;
@@ -426,6 +441,20 @@
       width: 138px;
       min-height: 52px;
       transition: left 0.16s ease, top 0.16s ease, transform 0.16s ease;
+    }
+
+    .no.trap {
+      z-index: 12;
+      width: min(168px, calc(100vw - 36px));
+      color: var(--rose-dark);
+      border-color: rgba(255, 95, 158, 0.34);
+      background: #fff7fb;
+      box-shadow: 0 14px 30px rgba(217, 39, 114, 0.24);
+      animation: noTaunt 0.72s ease-in-out infinite;
+    }
+
+    .yes.teased {
+      animation: yesPeek 0.86s ease-in-out infinite;
     }
 
     .hint {
@@ -913,6 +942,16 @@
       }
     }
 
+    @keyframes noTaunt {
+      0%, 100% { transform: translateY(0) rotate(-2deg) scale(1); }
+      50% { transform: translateY(-4px) rotate(2deg) scale(1.04); }
+    }
+
+    @keyframes yesPeek {
+      0%, 100% { transform: scale(1); filter: brightness(1); }
+      50% { transform: scale(0.97); filter: brightness(1.08); }
+    }
+
     @media (max-height: 680px) {
       .card {
         min-height: calc(100svh - 28px);
@@ -1087,6 +1126,8 @@
 
     let escapeCount = 0;
     let locked = false;
+    let trapReady = false;
+    const trapAfter = 5;
 
     function random(min, max) {
       return Math.random() * (max - min) + min;
@@ -1102,18 +1143,51 @@
       setTimeout(() => paw.remove(), 750);
     }
 
+    function placeNoTrap() {
+      const yesRect = yesBtn.getBoundingClientRect();
+      const noRect = noBtn.getBoundingClientRect();
+      const width = Math.min(168, window.innerWidth - 36);
+      const height = Math.max(noRect.height, 52);
+
+      trapReady = true;
+      noBtn.classList.add("running", "trap");
+      yesBtn.classList.add("teased");
+      noBtn.style.width = `${width}px`;
+      noBtn.style.left = `${Math.round(yesRect.left + yesRect.width / 2 - width / 2)}px`;
+      noBtn.style.top = `${Math.round(yesRect.top + yesRect.height / 2 - height / 2)}px`;
+      noBtn.style.transform = "";
+      noBtn.textContent = "Нет? нажми 😼";
+      hint.textContent = "Котик злится: кнопка «Нет» встала на «Да» и теперь сама оформляет согласие.";
+      speech.textContent = "попробуй нажать";
+    }
+
     function moveNoButton(event) {
       if (locked) return;
+      if (trapReady) {
+        placeNoTrap();
+        return;
+      }
+
       const rect = noBtn.getBoundingClientRect();
       const vw = window.innerWidth;
       const vh = window.innerHeight;
       const padding = 14;
       const maxLeft = Math.max(padding, vw - rect.width - padding);
       const maxTop = Math.max(padding, vh - rect.height - padding);
+      const sideRun = [
+        { left: padding, top: Math.max(padding + 18, vh * 0.64) },
+        { left: maxLeft, top: Math.max(padding + 18, vh * 0.64) },
+        { left: padding, top: Math.max(padding + 18, vh * 0.42) },
+        { left: maxLeft, top: Math.max(padding + 18, vh * 0.42) },
+        { left: Math.max(padding, vw * 0.5 - rect.width / 2), top: Math.max(padding + 18, vh * 0.72) },
+        { left: padding, top: Math.max(padding + 18, vh * 0.28) },
+        { left: maxLeft, top: Math.max(padding + 18, vh * 0.28) }
+      ];
+      const target = sideRun[escapeCount % sideRun.length];
 
       noBtn.classList.add("running");
-      noBtn.style.left = `${Math.round(random(padding, maxLeft))}px`;
-      noBtn.style.top = `${Math.round(random(padding + 20, maxTop - 8))}px`;
+      noBtn.style.left = `${Math.round(Math.min(maxLeft, Math.max(padding, target.left + random(-10, 10))))}px`;
+      noBtn.style.top = `${Math.round(Math.min(maxTop - 8, Math.max(padding + 20, target.top + random(-8, 8))))}px`;
       noBtn.style.transform = `rotate(${Math.round(random(-12, 12))}deg) scale(${Math.max(0.72, 1 - escapeCount * 0.035)})`;
 
       const line = noLines[escapeCount % noLines.length];
@@ -1126,17 +1200,18 @@
       createPaw(x, y);
 
       escapeCount += 1;
-      if (escapeCount > 11) {
-        noBtn.textContent = "я устала";
-        hint.textContent = "Даже кнопка «Нет» уже намекает нажать «Да».";
+      if (escapeCount >= trapAfter) {
+        window.setTimeout(placeNoTrap, 180);
       }
     }
 
     function celebrate() {
       locked = true;
+      trapReady = false;
       document.body.classList.add("accepted");
       noBtn.style.opacity = "0";
       noBtn.style.pointerEvents = "none";
+      yesBtn.classList.remove("teased");
       actions.style.gridTemplateColumns = "1fr";
       yesBtn.textContent = "Ура!";
       hint.textContent = "Официально: первое свидание назначено.";
@@ -1169,7 +1244,11 @@
 
     noBtn.addEventListener("click", (event) => {
       event.preventDefault();
-      moveNoButton(event);
+      if (trapReady) {
+        celebrate();
+      } else {
+        moveNoButton(event);
+      }
     });
 
     yesBtn.addEventListener("click", celebrate);
