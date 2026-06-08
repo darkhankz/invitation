@@ -1234,7 +1234,28 @@
       }
     }
 
+    function floatNoButton() {
+      if (noBtn.parentElement === document.body) return;
+
+      const rect = noBtn.getBoundingClientRect();
+      noBtn.classList.add("running");
+      document.body.appendChild(noBtn);
+      noBtn.style.width = `${Math.round(rect.width)}px`;
+      noBtn.style.left = `${Math.round(rect.left)}px`;
+      noBtn.style.top = `${Math.round(rect.top)}px`;
+    }
+
     function placeNoTrap() {
+      const firstRect = yesBtn.getBoundingClientRect();
+      const needsScroll = firstRect.top < 70 || firstRect.bottom > window.innerHeight - 26;
+
+      if (needsScroll) {
+        yesBtn.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
+        window.setTimeout(placeNoTrap, 320);
+        return;
+      }
+
+      floatNoButton();
       const yesRect = yesBtn.getBoundingClientRect();
       const noRect = noBtn.getBoundingClientRect();
       const width = Math.min(168, window.innerWidth - 36);
@@ -1247,7 +1268,7 @@
       noBtn.style.left = `${Math.round(yesRect.left + yesRect.width / 2 - width / 2)}px`;
       noBtn.style.top = `${Math.round(yesRect.top + yesRect.height / 2 - height / 2)}px`;
       noBtn.style.transform = "";
-      noBtn.textContent = "Нет? нажми 😼";
+      noBtn.textContent = "Попробуй еще раз 😼";
       hint.textContent = "Котик злится: кнопка «Нет» встала на «Да» и теперь сама оформляет согласие.";
       speech.textContent = "попробуй нажать";
     }
@@ -1263,6 +1284,7 @@
       if (now - lastEscapeAt < escapeCooldown) return;
       lastEscapeAt = now;
 
+      floatNoButton();
       const rect = noBtn.getBoundingClientRect();
       const actionsRect = actions.getBoundingClientRect();
       const vw = window.innerWidth;
@@ -1283,7 +1305,6 @@
       ];
       const target = sideRun[escapeCount % sideRun.length];
 
-      noBtn.classList.add("running");
       noBtn.style.left = `${Math.round(Math.min(maxLeft, Math.max(padding, target.left + random(-10, 10))))}px`;
       noBtn.style.top = `${Math.round(Math.min(maxTop - 8, Math.max(padding + 20, target.top + random(-8, 8))))}px`;
       noBtn.style.transform = `rotate(${Math.round(random(-12, 12))}deg) scale(${Math.max(0.72, 1 - escapeCount * 0.035)})`;
@@ -1342,7 +1363,11 @@
 
     noBtn.addEventListener("pointerdown", (event) => {
       event.preventDefault();
-      moveNoButton(event);
+      if (trapReady) {
+        celebrate();
+      } else {
+        moveNoButton(event);
+      }
     });
 
     noBtn.addEventListener("click", (event) => {
